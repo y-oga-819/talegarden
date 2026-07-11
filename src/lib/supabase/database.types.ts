@@ -1,5 +1,5 @@
-// Hand-maintained until a local Supabase stack is available, after which
-// `npm run gen:types` regenerates this file from the live schema.
+// ローカルの Supabase スタックが使えるまで手書きで管理する。以降は
+// `npm run gen:types` で実スキーマからこのファイルを再生成する。
 export type Json =
   | string
   | number

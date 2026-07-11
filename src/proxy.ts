@@ -8,7 +8,7 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
-    // Run on every route except Next internals and static assets.
+    // Next 内部と静的アセットを除く全ルートで実行する。
     "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 };

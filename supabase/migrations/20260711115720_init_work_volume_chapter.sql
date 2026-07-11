@@ -1,10 +1,10 @@
--- Phase 0 schema: Work / Volume / Chapter aggregates.
--- Aggregates reference each other via id only; cross-aggregate integrity is
--- enforced with foreign keys and ownership is scoped to auth.users via RLS.
+-- Phase 0 スキーマ: Work / Volume / Chapter 集約。
+-- 集約同士は id 参照のみ。集約をまたぐ整合性は外部キーで担保し、所有権は RLS で
+-- auth.users に紐づける。
 
 create extension if not exists "pgcrypto";
 
--- updated_at maintenance shared by every table below.
+-- 以下の全テーブルで共有する updated_at 更新処理。
 create or replace function public.set_updated_at()
 returns trigger
 language plpgsql
@@ -15,7 +15,7 @@ begin
 end;
 $$;
 
--- Work aggregate root: the tenant boundary every other aggregate hangs off.
+-- Work 集約ルート: 他の全集約がぶら下がるテナント境界。
 create table public.works (
   id uuid primary key default gen_random_uuid(),
   owner_id uuid not null default auth.uid() references auth.users (id) on delete cascade,
@@ -31,7 +31,7 @@ create trigger works_set_updated_at
   before update on public.works
   for each row execute function public.set_updated_at();
 
--- Volume aggregate root.
+-- Volume 集約ルート。
 create table public.volumes (
   id uuid primary key default gen_random_uuid(),
   work_id uuid not null references public.works (id) on delete cascade,
@@ -49,8 +49,8 @@ create trigger volumes_set_updated_at
   before update on public.volumes
   for each row execute function public.set_updated_at();
 
--- Chapter is a child entity of the Volume aggregate; body holds the manuscript
--- as a ProseMirror document. position keeps chapters ordered within a volume.
+-- Chapter は Volume 集約の子エンティティ。body に原稿を ProseMirror ドキュメントとして
+-- 保持し、position で巻内の章順序を保つ。
 create table public.chapters (
   id uuid primary key default gen_random_uuid(),
   volume_id uuid not null references public.volumes (id) on delete cascade,
@@ -70,8 +70,8 @@ create trigger chapters_set_updated_at
   before update on public.chapters
   for each row execute function public.set_updated_at();
 
--- Row Level Security: an authenticated user only ever sees their own works and
--- everything transitively owned through them.
+-- Row Level Security: 認証済みユーザーは自分の作品と、そこから辿れるものだけを
+-- 参照できる。
 alter table public.works enable row level security;
 alter table public.volumes enable row level security;
 alter table public.chapters enable row level security;

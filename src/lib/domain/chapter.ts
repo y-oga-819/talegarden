@@ -1,9 +1,7 @@
 /**
- * Chapter ordering lives in the domain layer rather than in SQL because the
- * "1..n contiguous, unique position" invariant belongs to the Volume aggregate
- * and must hold before anything is persisted. A DB unique constraint alone
- * cannot express contiguity, and doing it client-side would let the invariant
- * drift between UI and server.
+ * 章の並び順はドメイン層で扱う。「1..n が連続・一意」という不変条件は Volume
+ * 集約に属し、永続化前に保証すべきものだから。DB の unique 制約だけでは連続性を
+ * 表現できず、UI 側に持たせると UI とサーバで不変条件がずれてしまう。
  */
 
 export interface OrderedChapter {
@@ -11,15 +9,15 @@ export interface OrderedChapter {
   position: number;
 }
 
-/** Position to assign to a chapter appended at the end of a volume. */
+/** 巻の末尾に章を追加するときに割り当てる position。 */
 export function nextChapterPosition(chapters: readonly OrderedChapter[]): number {
   if (chapters.length === 0) return 1;
   return Math.max(...chapters.map((c) => c.position)) + 1;
 }
 
 /**
- * Move a chapter to a new 1-based slot and return the full set renumbered to a
- * contiguous 1..n sequence, preserving the relative order of the others.
+ * 章を 1 始まりの指定位置へ移動し、他の章の相対順序を保ったまま 1..n の連続列に
+ * 振り直した全体を返す。
  */
 export function reorderChapters(
   chapters: readonly OrderedChapter[],
@@ -39,7 +37,7 @@ export function reorderChapters(
   return ordered.map((chapter, index) => ({ ...chapter, position: index + 1 }));
 }
 
-/** True when positions form a contiguous 1..n sequence with no duplicates. */
+/** position が重複なく 1..n の連続列になっていれば true。 */
 export function hasContiguousPositions(chapters: readonly OrderedChapter[]): boolean {
   const positions = chapters.map((c) => c.position).sort((a, b) => a - b);
   return positions.every((position, index) => position === index + 1);

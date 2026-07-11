@@ -26,7 +26,7 @@ export async function updateSession(request: NextRequest) {
     },
   });
 
-  // Touch the session so refreshed tokens are written back onto the response.
+  // セッションに触れて、更新されたトークンをレスポンスへ書き戻す。
   await supabase.auth.getUser();
 
   return response;

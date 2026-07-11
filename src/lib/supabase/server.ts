@@ -19,8 +19,8 @@ export async function createClient() {
             cookieStore.set(name, value, options);
           }
         } catch {
-          // Called from a Server Component: cookie writes are handled by the
-          // middleware session refresh instead, so this is safe to ignore.
+          // Server Component から呼ばれたケース。cookie の書き込みは proxy の
+          // セッション更新側で行うため、ここでは握りつぶして問題ない。
         }
       },
     },
