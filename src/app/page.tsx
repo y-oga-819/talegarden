@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { signOut } from "@/lib/auth/actions";
@@ -46,6 +47,13 @@ export default async function Home() {
           設定を手入れし、一巻ごとに書くべきこと／書かなくていいことを整理する、
           小説執筆のための庭。
         </p>
+
+        <Link
+          href="/works"
+          className="mt-6 inline-block rounded-md bg-emerald-600 px-4 py-2 text-sm text-white"
+        >
+          作品一覧へ
+        </Link>
 
         <ul className="mt-10 grid gap-3 sm:grid-cols-2">
           {modules.map((m) => (
