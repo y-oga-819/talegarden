@@ -24,9 +24,17 @@ describe("workInputSchema", () => {
 });
 
 describe("volumeInputSchema", () => {
-  it("rejects a non-positive volume number", () => {
-    expect(
-      volumeInputSchema.safeParse({ number: 0, title: "第一巻" }).success,
-    ).toBe(false);
+  it("trims and accepts a valid title", () => {
+    const parsed = volumeInputSchema.parse({ title: "  第一巻  " });
+    expect(parsed.title).toBe("第一巻");
+  });
+
+  it("rejects a blank title", () => {
+    expect(volumeInputSchema.safeParse({ title: "   " }).success).toBe(false);
+  });
+
+  it("accepts an optional summary and trims it", () => {
+    const parsed = volumeInputSchema.parse({ title: "第一巻", summary: "  起  " });
+    expect(parsed.summary).toBe("起");
   });
 });
