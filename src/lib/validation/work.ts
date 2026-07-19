@@ -21,3 +21,13 @@ export const chapterInputSchema = z.object({
 });
 
 export type ChapterInput = z.infer<typeof chapterInputSchema>;
+
+// 原稿本文は ProseMirror ドキュメント。中身のノード構造まで検証すると TipTap の
+// スキーマと二重管理になるため、ここでは最上位が doc であることだけを保証し、詳細な
+// 正当性はエディタ側に委ねる。content の各ノードは unknown のまま通す。
+export const chapterDocSchema = z.object({
+  type: z.literal("doc"),
+  content: z.array(z.unknown()).optional(),
+});
+
+export type ChapterDoc = z.infer<typeof chapterDocSchema>;

@@ -4,6 +4,7 @@
  * 表現できず、UI 側に持たせると UI とサーバで不変条件がずれてしまう。
  */
 
+import { bodyToDoc, type ProseMirrorDoc } from "@/lib/domain/chapterBody";
 import type { Database } from "@/lib/supabase/database.types";
 
 type ChapterRow = Database["public"]["Tables"]["chapters"]["Row"];
@@ -16,6 +17,23 @@ export interface ChapterSummary {
   title: string;
   wordCount: number;
   updatedAt: string;
+}
+
+/**
+ * 原稿エディタ用の読みモデル。一覧では不要な本文(body)を ProseMirror doc に正規化して
+ * 含める点だけが ChapterSummary と異なる。UI が jsonb の内部表現や旧形式を知らずに
+ * 済むよう、変換はここ(ドメイン層)で閉じる。
+ */
+export interface ChapterDetail extends ChapterSummary {
+  bodyDoc: ProseMirrorDoc;
+}
+
+/** DB 行を原稿エディタ向けの読みモデルへ写す。 */
+export function toChapterDetail(row: ChapterRow): ChapterDetail {
+  return {
+    ...toChapterSummary(row),
+    bodyDoc: bodyToDoc(row.body),
+  };
 }
 
 /**

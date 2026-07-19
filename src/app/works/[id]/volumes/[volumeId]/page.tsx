@@ -90,12 +90,15 @@ export default async function VolumeDetailPage({
                 className="flex items-start justify-between gap-4 rounded-xl border border-black/10 p-4 dark:border-white/15"
               >
                 <div className="min-w-0">
-                  <div className="font-medium">
+                  <Link
+                    href={`/works/${id}/volumes/${volumeId}/chapters/${chapter.id}`}
+                    className="font-medium hover:underline"
+                  >
                     <span className="text-black/50 dark:text-white/50">
                       第{chapter.position}話
                     </span>{" "}
                     {chapter.title}
-                  </div>
+                  </Link>
                   <p className="mt-1 text-sm text-black/60 dark:text-white/60">
                     {chapter.wordCount.toLocaleString()} 文字
                   </p>
@@ -131,6 +134,12 @@ export default async function VolumeDetailPage({
                       ↓
                     </button>
                   </form>
+                  <Link
+                    href={`/works/${id}/volumes/${volumeId}/chapters/${chapter.id}`}
+                    className="rounded-md bg-emerald-600 px-3 py-1 text-sm text-white"
+                  >
+                    執筆
+                  </Link>
                   <Link
                     href={`/works/${id}/volumes/${volumeId}/chapters/${chapter.id}/edit`}
                     className="rounded-md border border-black/15 px-3 py-1 text-sm dark:border-white/20"

@@ -24,3 +24,48 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/*
+ * 原稿エディタ(TipTap/ProseMirror)の本文スタイル。Tailwind の preflight が見出し等の
+ * 既定スタイルを消すため、装飾が視覚的に伝わるよう最小限をここで補う。typography プラグインは
+ * 依存を増やすので導入せず、必要なブロックだけを対象にする。
+ */
+.tale-editor:focus {
+  outline: none;
+}
+.tale-editor p {
+  margin: 0 0 0.75em;
+}
+.tale-editor h2 {
+  font-size: 1.4rem;
+  font-weight: 700;
+  margin: 1.2em 0 0.5em;
+}
+.tale-editor h3 {
+  font-size: 1.15rem;
+  font-weight: 700;
+  margin: 1em 0 0.4em;
+}
+.tale-editor blockquote {
+  border-left: 3px solid currentColor;
+  opacity: 0.85;
+  padding-left: 1em;
+  margin: 0 0 0.75em;
+}
+.tale-editor ul,
+.tale-editor ol {
+  margin: 0 0 0.75em;
+  padding-left: 1.5em;
+}
+.tale-editor ul {
+  list-style: disc;
+}
+.tale-editor ol {
+  list-style: decimal;
+}
+.tale-editor hr {
+  border: none;
+  border-top: 1px solid currentColor;
+  opacity: 0.3;
+  margin: 1.5em 0;
+}
