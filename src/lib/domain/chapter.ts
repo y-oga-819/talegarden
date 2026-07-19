@@ -4,6 +4,7 @@
  * 表現できず、UI 側に持たせると UI とサーバで不変条件がずれてしまう。
  */
 
+import { bodyToText } from "@/lib/domain/chapterBody";
 import type { Database } from "@/lib/supabase/database.types";
 
 type ChapterRow = Database["public"]["Tables"]["chapters"]["Row"];
@@ -16,6 +17,23 @@ export interface ChapterSummary {
   title: string;
   wordCount: number;
   updatedAt: string;
+}
+
+/**
+ * 原稿エディタ用の読みモデル。一覧では不要な本文(body)をプレーンテキストに展開して
+ * 含める点だけが ChapterSummary と異なる。UI が jsonb の内部表現を知らずに済むよう、
+ * 変換はここ(ドメイン層)で閉じる。
+ */
+export interface ChapterDetail extends ChapterSummary {
+  bodyText: string;
+}
+
+/** DB 行を原稿エディタ向けの読みモデルへ写す。 */
+export function toChapterDetail(row: ChapterRow): ChapterDetail {
+  return {
+    ...toChapterSummary(row),
+    bodyText: bodyToText(row.body),
+  };
 }
 
 /**

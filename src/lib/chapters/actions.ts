@@ -3,11 +3,25 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
-import { createChapter, deleteChapter, moveChapter, updateChapter } from "@/lib/db/chapters";
-import { chapterInputSchema } from "@/lib/validation/work";
+import {
+  createChapter,
+  deleteChapter,
+  moveChapter,
+  updateChapter,
+  updateChapterBody,
+} from "@/lib/db/chapters";
+import { chapterBodyInputSchema, chapterInputSchema } from "@/lib/validation/work";
 
 export interface ChapterFormState {
   error?: string;
+}
+
+export interface ChapterBodyFormState {
+  error?: string;
+  // 保存成功時のみ設定する。エディタに留まったまま結果を表示するために使う。
+  // savedText は「保存後に本文が編集されたか」をクライアントが差分で判定するための基準。
+  savedText?: string;
+  wordCount?: number;
 }
 
 function parseChapterInput(formData: FormData) {
@@ -71,6 +85,36 @@ export async function updateChapterAction(
 
   revalidatePath(volumePath(workId, volumeId));
   redirect(volumePath(workId, volumeId));
+}
+
+export async function updateChapterBodyAction(
+  _prev: ChapterBodyFormState,
+  formData: FormData,
+): Promise<ChapterBodyFormState> {
+  const workId = formData.get("workId");
+  const volumeId = formData.get("volumeId");
+  const id = formData.get("id");
+  if (typeof workId !== "string" || workId.length === 0) {
+    return { error: "対象の作品が不明です" };
+  }
+  if (typeof volumeId !== "string" || volumeId.length === 0) {
+    return { error: "対象の巻が不明です" };
+  }
+  if (typeof id !== "string" || id.length === 0) {
+    return { error: "対象の章が不明です" };
+  }
+
+  const parsed = chapterBodyInputSchema.safeParse({ body: formData.get("body") });
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "入力が不正です" };
+  }
+
+  const wordCount = await updateChapterBody(id, parsed.data.body);
+
+  // 執筆を中断させないよう遷移はせず、エディタに留めたまま結果を返す。文字数は巻の章一覧に
+  // も出るため、そちらのキャッシュだけ無効化しておく。
+  revalidatePath(volumePath(workId, volumeId));
+  return { savedText: parsed.data.body, wordCount };
 }
 
 export async function deleteChapterAction(formData: FormData): Promise<void> {

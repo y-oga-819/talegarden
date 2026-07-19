@@ -2,9 +2,12 @@ import { createClient } from "@/lib/supabase/server";
 import {
   nextChapterPosition,
   reorderChapters,
+  toChapterDetail,
   toChapterSummary,
+  type ChapterDetail,
   type ChapterSummary,
 } from "@/lib/domain/chapter";
+import { countCharacters, textToBody } from "@/lib/domain/chapterBody";
 import type { ChapterInput } from "@/lib/validation/work";
 
 /**
@@ -52,6 +55,25 @@ export async function getChapter(id: string): Promise<ChapterSummary | null> {
 }
 
 /**
+ * 原稿エディタの初期値用に、本文を含む章を1件返す。他人の章は RLS で 0 件になるため、
+ * 見つからない場合は null を返す(getChapter と同じ扱い)。
+ */
+export async function getChapterDetail(id: string): Promise<ChapterDetail | null> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("chapters")
+    .select("*")
+    .eq("id", id)
+    .maybeSingle();
+
+  if (error) {
+    throw new Error(`章の取得に失敗しました: ${error.message}`);
+  }
+
+  return data ? toChapterDetail(data) : null;
+}
+
+/**
  * 巻に章を1件追加する。position は既存の末尾+1 をドメインで採番する
  * (volumes.createVolume の number 採番と同じ考え方)。
  */
@@ -92,6 +114,27 @@ export async function updateChapter(id: string, input: ChapterInput): Promise<vo
   if (error) {
     throw new Error(`章の更新に失敗しました: ${error.message}`);
   }
+}
+
+/**
+ * 章の本文を保存する。文字数(word_count)は本文から算出した値で常に上書きし、
+ * UI から渡された数値は信用しない(表示用の値と保存値がずれないようにするため)。
+ * 算出後の文字数を返し、保存直後の表示に使えるようにする。
+ */
+export async function updateChapterBody(id: string, text: string): Promise<number> {
+  const supabase = await createClient();
+  const wordCount = countCharacters(text);
+
+  const { error } = await supabase
+    .from("chapters")
+    .update({ body: textToBody(text), word_count: wordCount })
+    .eq("id", id);
+
+  if (error) {
+    throw new Error(`本文の保存に失敗しました: ${error.message}`);
+  }
+
+  return wordCount;
 }
 
 /** 章を削除する。 */

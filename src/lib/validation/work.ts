@@ -21,3 +21,11 @@ export const chapterInputSchema = z.object({
 });
 
 export type ChapterInput = z.infer<typeof chapterInputSchema>;
+
+// 原稿本文。タイトルと違い trim しない（行頭の字下げや前後の空行も原稿の一部）。
+// 上限は1章あたりの現実的な分量を大きく超える値に置き、事故的な巨大入力だけを弾く。
+export const chapterBodyInputSchema = z.object({
+  body: z.string().max(200_000, "本文が長すぎます"),
+});
+
+export type ChapterBodyInput = z.infer<typeof chapterBodyInputSchema>;
