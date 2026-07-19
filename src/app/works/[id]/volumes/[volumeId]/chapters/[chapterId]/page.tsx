@@ -59,7 +59,7 @@ export default async function ChapterEditorPage({
           workId={id}
           volumeId={volumeId}
           chapterId={chapter.id}
-          defaultBody={chapter.bodyText}
+          defaultDoc={chapter.bodyDoc}
         />
       </main>
     </>

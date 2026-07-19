@@ -22,10 +22,12 @@ export const chapterInputSchema = z.object({
 
 export type ChapterInput = z.infer<typeof chapterInputSchema>;
 
-// 原稿本文。タイトルと違い trim しない（行頭の字下げや前後の空行も原稿の一部）。
-// 上限は1章あたりの現実的な分量を大きく超える値に置き、事故的な巨大入力だけを弾く。
-export const chapterBodyInputSchema = z.object({
-  body: z.string().max(200_000, "本文が長すぎます"),
+// 原稿本文は ProseMirror ドキュメント。中身のノード構造まで検証すると TipTap の
+// スキーマと二重管理になるため、ここでは最上位が doc であることだけを保証し、詳細な
+// 正当性はエディタ側に委ねる。content の各ノードは unknown のまま通す。
+export const chapterDocSchema = z.object({
+  type: z.literal("doc"),
+  content: z.array(z.unknown()).optional(),
 });
 
-export type ChapterBodyInput = z.infer<typeof chapterBodyInputSchema>;
+export type ChapterDoc = z.infer<typeof chapterDocSchema>;

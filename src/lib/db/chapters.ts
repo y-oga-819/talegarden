@@ -7,7 +7,8 @@ import {
   type ChapterDetail,
   type ChapterSummary,
 } from "@/lib/domain/chapter";
-import { countCharacters, textToBody } from "@/lib/domain/chapterBody";
+import { countDocCharacters, type ProseMirrorDoc } from "@/lib/domain/chapterBody";
+import type { Json } from "@/lib/supabase/database.types";
 import type { ChapterInput } from "@/lib/validation/work";
 
 /**
@@ -117,17 +118,19 @@ export async function updateChapter(id: string, input: ChapterInput): Promise<vo
 }
 
 /**
- * 章の本文を保存する。文字数(word_count)は本文から算出した値で常に上書きし、
- * UI から渡された数値は信用しない(表示用の値と保存値がずれないようにするため)。
- * 算出後の文字数を返し、保存直後の表示に使えるようにする。
+ * 章の本文(ProseMirror doc)を保存する。文字数(word_count)は本文から算出した値で
+ * 常に上書きし、UI から渡された数値は信用しない(表示用の値と保存値がずれないように
+ * するため)。算出後の文字数を返し、保存直後の表示に使えるようにする。
  */
-export async function updateChapterBody(id: string, text: string): Promise<number> {
+export async function updateChapterBody(id: string, doc: ProseMirrorDoc): Promise<number> {
   const supabase = await createClient();
-  const wordCount = countCharacters(text);
+  const wordCount = countDocCharacters(doc);
 
   const { error } = await supabase
     .from("chapters")
-    .update({ body: textToBody(text), word_count: wordCount })
+    // jsonb 列へ doc を保存する境界。ProseMirrorDoc は Json と構造的に等価だが
+    // content を unknown[] にしているため、ここで一度だけ Json へ寄せる。
+    .update({ body: doc as unknown as Json, word_count: wordCount })
     .eq("id", id);
 
   if (error) {

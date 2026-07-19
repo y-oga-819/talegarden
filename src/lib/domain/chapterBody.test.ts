@@ -1,27 +1,72 @@
 import { describe, expect, it } from "vitest";
 
-import { bodyToText, countCharacters, emptyBody, textToBody } from "./chapterBody";
+import {
+  bodyToDoc,
+  countCharacters,
+  countDocCharacters,
+  docToText,
+  emptyDoc,
+  isProseMirrorDoc,
+} from "./chapterBody";
 
-describe("body とテキストの相互変換", () => {
-  it("テキストを包んで取り出すと元に戻る", () => {
-    const body = textToBody("むかしむかし、\nあるところに。");
-    expect(bodyToText(body)).toBe("むかしむかし、\nあるところに。");
+describe("body から doc への正規化", () => {
+  it("既に doc ならそのまま返す", () => {
+    const doc = { type: "doc", content: [{ type: "paragraph" }] };
+    expect(bodyToDoc(doc)).toBe(doc);
   });
 
-  it("空本文はからの文字列を保持する", () => {
-    expect(bodyToText(emptyBody())).toBe("");
+  it("旧プレーンテキスト形式は段落 doc へ移行する", () => {
+    const doc = bodyToDoc({ type: "plaintext", text: "一行目\n二行目" });
+    expect(doc).toEqual({
+      type: "doc",
+      content: [
+        { type: "paragraph", content: [{ type: "text", text: "一行目" }] },
+        { type: "paragraph", content: [{ type: "text", text: "二行目" }] },
+      ],
+    });
   });
 
-  it("DB デフォルトの空オブジェクトは空文字として読む", () => {
-    expect(bodyToText({})).toBe("");
+  it("DB デフォルトの空オブジェクト・null は空 doc にする", () => {
+    expect(bodyToDoc({})).toEqual(emptyDoc());
+    expect(bodyToDoc(null)).toEqual(emptyDoc());
+    expect(bodyToDoc(undefined)).toEqual(emptyDoc());
+  });
+});
+
+describe("doc 判定", () => {
+  it("type が doc のオブジェクトだけ true", () => {
+    expect(isProseMirrorDoc({ type: "doc", content: [] })).toBe(true);
+    expect(isProseMirrorDoc({ type: "plaintext", text: "x" })).toBe(false);
+    expect(isProseMirrorDoc(null)).toBe(false);
+    expect(isProseMirrorDoc([1, 2])).toBe(false);
+    expect(isProseMirrorDoc("doc")).toBe(false);
+  });
+});
+
+describe("doc からのテキスト抽出", () => {
+  it("入れ子のノードから text を集める", () => {
+    const doc = {
+      type: "doc",
+      content: [
+        {
+          type: "heading",
+          content: [{ type: "text", text: "見出し" }],
+        },
+        {
+          type: "paragraph",
+          content: [
+            { type: "text", text: "太字", marks: [{ type: "bold" }] },
+            { type: "text", text: "と地の文" },
+          ],
+        },
+      ],
+    };
+    expect(docToText(doc)).toBe("見出し\n太字\nと地の文");
   });
 
-  it("null や想定外の構造は空文字に倒す", () => {
-    expect(bodyToText(null)).toBe("");
-    expect(bodyToText(undefined)).toBe("");
-    expect(bodyToText("just a string")).toBe("");
-    expect(bodyToText([1, 2, 3])).toBe("");
-    expect(bodyToText({ type: "prosemirror", content: [] })).toBe("");
+  it("text を持たない doc は空文字", () => {
+    expect(docToText(emptyDoc())).toBe("");
+    expect(docToText(null)).toBe("");
   });
 });
 
@@ -41,5 +86,17 @@ describe("文字数カウント", () => {
 
   it("絵文字などの結合文字を1文字として数える", () => {
     expect(countCharacters("👨‍👩‍👧")).toBe(1);
+  });
+
+  it("doc の文字数は装飾や見出しを除いた本文の字数", () => {
+    const doc = {
+      type: "doc",
+      content: [
+        { type: "heading", content: [{ type: "text", text: "序章" }] },
+        { type: "paragraph", content: [{ type: "text", text: "彼は歩いた。" }] },
+      ],
+    };
+    // 「序章」2 + 「彼は歩いた」5(句点は非空白なので数える→6) = 8
+    expect(countDocCharacters(doc)).toBe(countCharacters("序章彼は歩いた。"));
   });
 });

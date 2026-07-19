@@ -1,48 +1,80 @@
 /**
- * 章本文(body)の表現とテキストの相互変換、および文字数の算出を担う。
+ * 章本文(body)の表現と、本文からの文字数算出を担う。
  *
- * body カラムは将来 ProseMirror ドキュメント(リッチテキスト)を保持する前提で jsonb に
- * しているが、現段階の原稿エディタはプレーンテキストしか扱わない。そこで
- * `{ type: "plaintext", text }` という自己記述的な構造で包んでおき、後で
- * ProseMirror へ移行する際に type で旧データを判別・変換できるようにする。生の文字列を
- * そのまま入れないのは、jsonb の中身がテキストなのか doc なのかを型で区別できなくなるため。
+ * body は TipTap(ProseMirror) のリッチテキストを `{ type:"doc", content:[…] }` の
+ * ドキュメント JSON として保持する。装飾(太字・見出し等)や、将来の @メンション/伏線リンクを
+ * ノードとして表現するには、プレーンテキストではなく構造化ドキュメントが必要になるため。
+ *
+ * 旧実装はプレーンテキストを `{ type:"plaintext", text }` で保存していた。既存データを
+ * 壊さないよう、読み出し時にその形式を doc へ変換する(DB マイグレーション不要の後方互換)。
  */
 
 import type { Json } from "@/lib/supabase/database.types";
 
 /**
- * プレーンテキスト本文の永続化表現。interface ではなく type にしているのは、
- * jsonb 列(Json 型 = 文字列インデックスシグネチャ)へそのまま渡せるようにするため。
- * interface は宣言マージの余地があり index signature へ代入できない。
+ * ProseMirror ドキュメントの最小の型。中身のノード構造はライブラリ側の関心なので
+ * content は unknown[] に留め、この層は「doc かどうか」と「テキスト抽出」だけを担う。
+ * interface ではなく type にしているのは jsonb 列(Json 型)への代入互換のため。
  */
-type PlaintextBody = {
-  type: "plaintext";
-  text: string;
+export type ProseMirrorDoc = {
+  type: "doc";
+  content?: unknown[];
 };
 
-/** 空本文。DB のデフォルト(`{}`)とは別に、明示的な空テキストとして保存する。 */
-export function emptyBody(): PlaintextBody {
-  return { type: "plaintext", text: "" };
+/** 何も書かれていない本文。ProseMirror は空でも段落1つを要求するため空パラグラフを置く。 */
+export function emptyDoc(): ProseMirrorDoc {
+  return { type: "doc", content: [{ type: "paragraph" }] };
 }
 
-/** プレーンテキストを永続化表現へ包む。 */
-export function textToBody(text: string): PlaintextBody {
-  return { type: "plaintext", text };
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+/** 永続化された body が ProseMirror doc なら true。 */
+export function isProseMirrorDoc(body: unknown): body is ProseMirrorDoc {
+  return isRecord(body) && body.type === "doc";
 }
 
 /**
- * 永続化された body からプレーンテキストを取り出す。DB デフォルトの `{}` や、
- * 想定外の構造・null が来ても壊れないよう、取り出せないものは空文字に倒す。
+ * 旧形式 `{ type:"plaintext", text }` や DB デフォルト `{}` からプレーンテキストを取り出す。
+ * doc への移行にのみ使う内部読み出し。取り出せないものは空文字に倒す。
  */
 export function bodyToText(body: Json | null | undefined): string {
-  if (
-    body !== null &&
-    typeof body === "object" &&
-    !Array.isArray(body) &&
-    body.type === "plaintext" &&
-    typeof body.text === "string"
-  ) {
+  if (isRecord(body) && body.type === "plaintext" && typeof body.text === "string") {
     return body.text;
+  }
+  return "";
+}
+
+/** プレーンテキストを段落 doc へ変換する。改行区切りで段落に割る。 */
+function textToDoc(text: string): ProseMirrorDoc {
+  const paragraphs = text.split("\n").map((line) =>
+    line.length === 0
+      ? { type: "paragraph" }
+      : { type: "paragraph", content: [{ type: "text", text: line }] },
+  );
+  return { type: "doc", content: paragraphs.length > 0 ? paragraphs : [{ type: "paragraph" }] };
+}
+
+/**
+ * 永続化された body をエディタ初期値の doc へ正規化する。既に doc ならそのまま、
+ * 旧プレーンテキスト形式や空 `{}`・null は doc へ変換する。
+ */
+export function bodyToDoc(body: Json | null | undefined): ProseMirrorDoc {
+  if (isProseMirrorDoc(body)) return body;
+  const legacyText = bodyToText(body);
+  return legacyText.length > 0 ? textToDoc(legacyText) : emptyDoc();
+}
+
+/**
+ * doc からプレーンテキストを再帰的に抽出する。text ノードの文字列を集め、ブロックの
+ * 境界は改行でつなぐ(空白は文字数計上で無視されるため区切り文字の種類は結果に影響しない)。
+ */
+export function docToText(node: unknown): string {
+  if (!isRecord(node)) return "";
+  if (typeof node.text === "string") return node.text;
+  if (Array.isArray(node.content)) {
+    return node.content.map(docToText).join("\n");
   }
   return "";
 }
@@ -64,4 +96,9 @@ export function countCharacters(text: string): number {
   }
 
   return [...withoutWhitespace].length;
+}
+
+/** doc に含まれる文字数を数える(docToText → countCharacters の合成)。 */
+export function countDocCharacters(doc: unknown): number {
+  return countCharacters(docToText(doc));
 }
