@@ -11,6 +11,16 @@ describe("workInputSchema", () => {
   it("rejects a blank title", () => {
     expect(workInputSchema.safeParse({ title: "   " }).success).toBe(false);
   });
+
+  it("accepts an optional synopsis and trims it", () => {
+    const parsed = workInputSchema.parse({ title: "月の庭", synopsis: "  導入  " });
+    expect(parsed.synopsis).toBe("導入");
+  });
+
+  it("accepts input without a synopsis", () => {
+    const parsed = workInputSchema.parse({ title: "月の庭" });
+    expect(parsed.synopsis).toBeUndefined();
+  });
 });
 
 describe("volumeInputSchema", () => {

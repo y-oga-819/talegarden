@@ -2,8 +2,9 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { listWorks } from "@/lib/db/works";
-import { signOut } from "@/lib/auth/actions";
 import { createClient } from "@/lib/supabase/server";
+import { DeleteWorkButton } from "./delete-work-button";
+import { WorksHeader } from "./works-header";
 
 export default async function WorksPage() {
   const supabase = await createClient();
@@ -19,36 +20,17 @@ export default async function WorksPage() {
 
   return (
     <>
-      <header className="flex items-center justify-between border-b border-black/10 px-6 py-3 dark:border-white/15">
-        <Link href="/" className="font-semibold">
-          TaleGarden
-        </Link>
-        <div className="flex items-center gap-3 text-sm">
-          <span className="text-black/60 dark:text-white/60">{user.email}</span>
-          <form action={signOut}>
-            <button
-              type="submit"
-              className="rounded-md border border-black/15 px-3 py-1 dark:border-white/20"
-            >
-              ログアウト
-            </button>
-          </form>
-        </div>
-      </header>
+      <WorksHeader email={user.email} />
 
       <main className="mx-auto max-w-3xl px-6 py-12">
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-bold tracking-tight">作品</h1>
-          {/* 作成フォームは 1a-3 で実装する。ここでは導線だけ置き、押せない状態にして
-              「未実装を実装済みに見せない」ようにする。 */}
-          <button
-            type="button"
-            disabled
-            title="作成は次の変更(1a-3)で実装します"
-            className="cursor-not-allowed rounded-md bg-emerald-600 px-4 py-2 text-sm text-white opacity-50"
+          <Link
+            href="/works/new"
+            className="rounded-md bg-emerald-600 px-4 py-2 text-sm text-white"
           >
             新規作成
-          </button>
+          </Link>
         </div>
 
         {works.length === 0 ? (
@@ -62,14 +44,25 @@ export default async function WorksPage() {
             {works.map((work) => (
               <li
                 key={work.id}
-                className="rounded-xl border border-black/10 p-4 dark:border-white/15"
+                className="flex items-start justify-between gap-4 rounded-xl border border-black/10 p-4 dark:border-white/15"
               >
-                <div className="font-medium">{work.title}</div>
-                {work.synopsis ? (
-                  <p className="mt-1 line-clamp-2 text-sm text-black/60 dark:text-white/60">
-                    {work.synopsis}
-                  </p>
-                ) : null}
+                <div className="min-w-0">
+                  <div className="font-medium">{work.title}</div>
+                  {work.synopsis ? (
+                    <p className="mt-1 line-clamp-2 text-sm text-black/60 dark:text-white/60">
+                      {work.synopsis}
+                    </p>
+                  ) : null}
+                </div>
+                <div className="flex shrink-0 items-center gap-2">
+                  <Link
+                    href={`/works/${work.id}/edit`}
+                    className="rounded-md border border-black/15 px-3 py-1 text-sm dark:border-white/20"
+                  >
+                    編集
+                  </Link>
+                  <DeleteWorkButton workId={work.id} title={work.title} />
+                </div>
               </li>
             ))}
           </ul>
