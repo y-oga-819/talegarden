@@ -83,12 +83,15 @@ export default async function WorkDetailPage({
                 className="flex items-start justify-between gap-4 rounded-xl border border-black/10 p-4 dark:border-white/15"
               >
                 <div className="min-w-0">
-                  <div className="font-medium">
+                  <Link
+                    href={`/works/${work.id}/volumes/${volume.id}`}
+                    className="font-medium hover:underline"
+                  >
                     <span className="text-black/50 dark:text-white/50">
                       第{volume.number}巻
                     </span>{" "}
                     {volume.title}
-                  </div>
+                  </Link>
                   {volume.summary ? (
                     <p className="mt-1 line-clamp-2 text-sm text-black/60 dark:text-white/60">
                       {volume.summary}
