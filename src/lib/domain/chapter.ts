@@ -4,6 +4,35 @@
  * 表現できず、UI 側に持たせると UI とサーバで不変条件がずれてしまう。
  */
 
+import type { Database } from "@/lib/supabase/database.types";
+
+type ChapterRow = Database["public"]["Tables"]["chapters"]["Row"];
+
+/** 章一覧に必要な最小の読みモデル。本文(body)は一覧表示では不要なため含めない。 */
+export interface ChapterSummary {
+  id: string;
+  volumeId: string;
+  position: number;
+  title: string;
+  wordCount: number;
+  updatedAt: string;
+}
+
+/**
+ * DB 行をドメイン向けの形へ写す。snake_case を camelCase に寄せ、UI/ドメインが
+ * DB スキーマの命名に直接依存しないようにする（volume.toVolumeSummary と対）。
+ */
+export function toChapterSummary(row: ChapterRow): ChapterSummary {
+  return {
+    id: row.id,
+    volumeId: row.volume_id,
+    position: row.position,
+    title: row.title,
+    wordCount: row.word_count,
+    updatedAt: row.updated_at,
+  };
+}
+
 export interface OrderedChapter {
   id: string;
   position: number;

@@ -4,6 +4,7 @@ import {
   hasContiguousPositions,
   nextChapterPosition,
   reorderChapters,
+  toChapterSummary,
   type OrderedChapter,
 } from "./chapter";
 
@@ -12,6 +13,30 @@ const chapters: OrderedChapter[] = [
   { id: "b", position: 2 },
   { id: "c", position: 3 },
 ];
+
+describe("toChapterSummary", () => {
+  it("maps snake_case DB rows to a camelCase read model", () => {
+    const summary = toChapterSummary({
+      id: "c1",
+      volume_id: "v1",
+      position: 2,
+      title: "第二章",
+      body: {},
+      word_count: 1200,
+      created_at: "2026-07-01T00:00:00Z",
+      updated_at: "2026-07-05T00:00:00Z",
+    });
+
+    expect(summary).toEqual({
+      id: "c1",
+      volumeId: "v1",
+      position: 2,
+      title: "第二章",
+      wordCount: 1200,
+      updatedAt: "2026-07-05T00:00:00Z",
+    });
+  });
+});
 
 describe("nextChapterPosition", () => {
   it("starts numbering at 1 for an empty volume", () => {

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { volumeInputSchema, workInputSchema } from "./work";
+import { chapterInputSchema, volumeInputSchema, workInputSchema } from "./work";
 
 describe("workInputSchema", () => {
   it("trims and accepts a valid title", () => {
@@ -36,5 +36,16 @@ describe("volumeInputSchema", () => {
   it("accepts an optional summary and trims it", () => {
     const parsed = volumeInputSchema.parse({ title: "第一巻", summary: "  起  " });
     expect(parsed.summary).toBe("起");
+  });
+});
+
+describe("chapterInputSchema", () => {
+  it("trims and accepts a valid title", () => {
+    const parsed = chapterInputSchema.parse({ title: "  第一章  " });
+    expect(parsed.title).toBe("第一章");
+  });
+
+  it("rejects a blank title", () => {
+    expect(chapterInputSchema.safeParse({ title: "   " }).success).toBe(false);
   });
 });
