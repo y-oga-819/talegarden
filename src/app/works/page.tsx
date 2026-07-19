@@ -47,7 +47,9 @@ export default async function WorksPage() {
                 className="flex items-start justify-between gap-4 rounded-xl border border-black/10 p-4 dark:border-white/15"
               >
                 <div className="min-w-0">
-                  <div className="font-medium">{work.title}</div>
+                  <Link href={`/works/${work.id}`} className="font-medium hover:underline">
+                    {work.title}
+                  </Link>
                   {work.synopsis ? (
                     <p className="mt-1 line-clamp-2 text-sm text-black/60 dark:text-white/60">
                       {work.synopsis}
