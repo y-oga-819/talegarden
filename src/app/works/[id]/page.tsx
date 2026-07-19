@@ -3,8 +3,10 @@ import { notFound, redirect } from "next/navigation";
 
 import { getWork } from "@/lib/db/works";
 import { listVolumes } from "@/lib/db/volumes";
+import { listCharacters } from "@/lib/db/characters";
 import { createClient } from "@/lib/supabase/server";
 import { DeleteVolumeButton } from "./delete-volume-button";
+import { DeleteCharacterButton } from "./delete-character-button";
 import { WorksHeader } from "../works-header";
 
 export default async function WorkDetailPage({
@@ -29,6 +31,7 @@ export default async function WorkDetailPage({
   }
 
   const volumes = await listVolumes(id);
+  const characters = await listCharacters(id);
 
   return (
     <>
@@ -109,6 +112,62 @@ export default async function WorkDetailPage({
                     workId={work.id}
                     volumeId={volume.id}
                     title={volume.title}
+                  />
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+
+        <div className="mt-12 flex items-center justify-between">
+          <h2 className="text-lg font-semibold">登場人物</h2>
+          <Link
+            href={`/works/${work.id}/characters/new`}
+            className="rounded-md bg-emerald-600 px-4 py-2 text-sm text-white"
+          >
+            登場人物を追加
+          </Link>
+        </div>
+
+        {characters.length === 0 ? (
+          <div className="mt-6 rounded-xl border border-dashed border-black/15 p-10 text-center dark:border-white/20">
+            <p className="text-sm text-black/60 dark:text-white/60">
+              まだ登場人物がいません。物語の住人を迎え入れましょう。
+            </p>
+          </div>
+        ) : (
+          <ul className="mt-6 flex flex-col gap-3">
+            {characters.map((character) => (
+              <li
+                key={character.id}
+                className="flex items-start justify-between gap-4 rounded-xl border border-black/10 p-4 dark:border-white/15"
+              >
+                <div className="min-w-0">
+                  <div className="flex items-baseline gap-2">
+                    <span className="font-medium">{character.name}</span>
+                    {character.role ? (
+                      <span className="shrink-0 rounded-full bg-black/5 px-2 py-0.5 text-xs text-black/60 dark:bg-white/10 dark:text-white/60">
+                        {character.role}
+                      </span>
+                    ) : null}
+                  </div>
+                  {character.profile ? (
+                    <p className="mt-1 line-clamp-2 text-sm text-black/60 dark:text-white/60">
+                      {character.profile}
+                    </p>
+                  ) : null}
+                </div>
+                <div className="flex shrink-0 items-center gap-2">
+                  <Link
+                    href={`/works/${work.id}/characters/${character.id}/edit`}
+                    className="rounded-md border border-black/15 px-3 py-1 text-sm dark:border-white/20"
+                  >
+                    編集
+                  </Link>
+                  <DeleteCharacterButton
+                    workId={work.id}
+                    characterId={character.id}
+                    name={character.name}
                   />
                 </div>
               </li>

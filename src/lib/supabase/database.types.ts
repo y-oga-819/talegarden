@@ -75,6 +75,44 @@ export type Database = {
           },
         ]
       }
+      characters: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          profile: string | null
+          role: string | null
+          updated_at: string
+          work_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          profile?: string | null
+          role?: string | null
+          updated_at?: string
+          work_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          profile?: string | null
+          role?: string | null
+          updated_at?: string
+          work_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "characters_work_id_fkey"
+            columns: ["work_id"]
+            isOneToOne: false
+            referencedRelation: "works"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       volumes: {
         Row: {
           created_at: string
